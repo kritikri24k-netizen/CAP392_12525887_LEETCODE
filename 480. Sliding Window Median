@@ -1,0 +1,95 @@
+class Solution {
+    private PriorityQueue<Integer> left;
+    private PriorityQueue<Integer> right;
+    private Map<Integer, Integer> toRemove;
+    private int leftSize;
+    private int rightSize;
+
+    public double[] medianSlidingWindow(int[] nums, int k) {
+        left = new PriorityQueue<>(Collections.reverseOrder());
+        right = new PriorityQueue<>();
+        toRemove = new HashMap<>();
+        leftSize = 0;
+        rightSize = 0;
+
+        int n = nums.length;
+        double[] result = new double[n - k + 1];
+
+        for (int i = 0; i < n; i++) {
+            addNumber(nums[i]);
+
+            if (i >= k) {
+                removeNumber(nums[i - k]);
+            }
+
+            if (i >= k - 1) {
+                result[i - k + 1] = findMedian(k);
+            }
+        }
+
+        return result;
+    }
+
+    private void addNumber(int num) {
+        if (left.isEmpty() || num <= left.peek()) {
+            left.offer(num);
+            leftSize++;
+        } else {
+            right.offer(num);
+            rightSize++;
+        }
+        balance();
+    }
+
+    private void removeNumber(int num) {
+        toRemove.put(num, toRemove.getOrDefault(num, 0) + 1);
+
+        if (!left.isEmpty() && num <= left.peek()) {
+            leftSize--;
+            if (num == left.peek()) {
+                pruneLeft();
+            }
+        } else {
+            rightSize--;
+            if (!right.isEmpty() && num == right.peek()) {
+                pruneRight();
+            }
+        }
+        balance();
+    }
+
+    private void balance() {
+        if (leftSize > rightSize + 1) {
+            right.offer(left.poll());
+            leftSize--;
+            rightSize++;
+            pruneLeft();
+        } else if (leftSize < rightSize) {
+            left.offer(right.poll());
+            rightSize--;
+            leftSize++;
+            pruneRight();
+        }
+    }
+
+    private void pruneLeft() {
+        while (!left.isEmpty() && toRemove.getOrDefault(left.peek(), 0) > 0) {
+            int val = left.poll();
+            toRemove.put(val, toRemove.get(val) - 1);
+        }
+    }
+
+    private void pruneRight() {
+        while (!right.isEmpty() && toRemove.getOrDefault(right.peek(), 0) > 0) {
+            int val = right.poll();
+            toRemove.put(val, toRemove.get(val) - 1);
+        }
+    }
+
+    private double findMedian(int k) {
+        if (k % 2 == 1) {
+            return (double) left.peek();
+        }
+        return ((double) left.peek() + (double) right.peek()) / 2.0;
+    }
+}
